@@ -119,7 +119,16 @@
       </div>
 
       <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-      <script>eruda.init();</script>
+      <script>eruda.init();
+      const orig = window.__loaderResolve;
+window.__loaderResolve = function(value, base) {
+  const result = orig(value, base);
+  if (value && value.includes('StreamingAssets')) {
+    console.log('RESOLVE:', value, '->', result);
+  }
+  return result;
+};
+      </script>
     </div>
   </body>
 </html>
