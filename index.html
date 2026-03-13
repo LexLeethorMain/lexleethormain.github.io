@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en-us">
   <head>
@@ -9,6 +8,86 @@
     <link rel="stylesheet" href="/TemplateData/style.css">
     <script src="/TemplateData/UnityProgress.js"></script>
     <script src="/Build/UnityLoader.js"></script>
+    <script>
+      // === LOG INTERCEPTOR (runs before everything) ===
+      (function() {
+        const logBox = document.getElementById('log-output');
+
+        function appendLog(type, args) {
+          const el = document.getElementById('log-output');
+          if (!el) return;
+          const line = document.createElement('div');
+          line.className = 'log-line log-' + type;
+          const time = new Date().toLocaleTimeString();
+          line.textContent = '[' + time + '] [' + type.toUpperCase() + '] ' + Array.from(args).map(a => {
+            try { return typeof a === 'object' ? JSON.stringify(a) : String(a); } catch(e) { return String(a); }
+          }).join(' ');
+          el.appendChild(line);
+          el.scrollTop = el.scrollHeight;
+        }
+
+        const _log = console.log.bind(console);
+        const _warn = console.warn.bind(console);
+        const _error = console.error.bind(console);
+
+        console.log = function() { _log(...arguments); appendLog('log', arguments); };
+        console.warn = function() { _warn(...arguments); appendLog('warn', arguments); };
+        console.error = function() { _error(...arguments); appendLog('error', arguments); };
+
+        window.addEventListener('error', function(e) {
+          appendLog('error', [e.message + (e.filename ? ' @ ' + e.filename + ':' + e.lineno : '')]);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+          appendLog('error', ['Unhandled Promise:', e.reason]);
+        });
+      })();
+    </script>
+    <style>
+      #log-panel {
+        margin: 20px auto;
+        width: 960px;
+        font-family: monospace;
+        font-size: 12px;
+      }
+      #log-toolbar {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+        background: #1e1e1e;
+        padding: 6px 10px;
+        border-radius: 6px 6px 0 0;
+      }
+      #log-toolbar span {
+        color: #ccc;
+        font-weight: bold;
+        font-size: 13px;
+        flex: 1;
+      }
+      #log-toolbar button {
+        background: #333;
+        color: #eee;
+        border: none;
+        padding: 3px 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+      }
+      #log-toolbar button:hover { background: #555; }
+      #log-output {
+        background: #111;
+        color: #ddd;
+        height: 250px;
+        overflow-y: auto;
+        padding: 8px;
+        border: 1px solid #333;
+        border-radius: 0 0 6px 6px;
+      }
+      .log-line { padding: 2px 0; border-bottom: 1px solid #1a1a1a; line-height: 1.5; }
+      .log-log   { color: #ccc; }
+      .log-warn  { color: #f0c040; }
+      .log-error { color: #ff6b6b; }
+    </style>
     <script>
       var gameInstance = UnityLoader.instantiate("gameContainer", "Build/WebGL_September222022.json", {onProgress: UnityProgress});
     </script>
@@ -21,12 +100,26 @@
         <div class="fullscreen" onclick="gameInstance.SetFullscreen(1)"></div>
         <div class="title">Bad Piggies WebGL</div>
       </div>
-	<h2 style="text-align: center;">If you see errors, try clearing your cache.</h2>
+      <h2 style="text-align: center;">If you see errors, try clearing your cache.</h2>
       <h2 style="text-align: center;">Special Thanks to:</h2>
       <a href="https://github.com/AssetRipper/AssetRipper">The people behind AssetRipper</a> <br>
       <a href="https://github.com/BP-Innovation/Bad-Piggies-Original">The people behind the Bad Piggies reverse-engineering project</a>
-		    <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
-<script>eruda.init();</script>
+
+      <!-- LOG PANEL -->
+      <div id="log-panel">
+        <div id="log-toolbar">
+          <span>🪵 Console Output</span>
+          <button onclick="document.getElementById('log-output').innerHTML=''">Clear</button>
+          <button onclick="
+            const lines = [...document.querySelectorAll('.log-line')].map(l=>l.textContent).join('\n');
+            navigator.clipboard.writeText(lines).then(()=>alert('Copied!'));
+          ">Copy All</button>
+        </div>
+        <div id="log-output"></div>
+      </div>
+
+      <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+      <script>eruda.init();</script>
     </div>
   </body>
 </html>
